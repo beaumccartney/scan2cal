@@ -28,18 +28,18 @@ You can check out the [create-t3-app GitHub repository](https://github.com/t3-os
 
 Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
 ---
-# Install the Bun 
+## Install the Bun 
 for macOS, Linux, and WSL : curl -fsSL https://bun.com/install | bash 
 for macOS and Linux: brew install oven-sh/bun/bun 
 for windows : npm install -g bun 
-# Initalize the package
+## Initalize the package
 bun install 
-# create .env file
-cope the line from .env.example to ./env file
-# Run the docker file / ./start-database.sh
+## create .env file
+copy the line from .env.example to ./env file
+## Run the docker file / ./start-database.sh
 Start the container: bun run db:start 
-top  the container: bun run db:stop
-# Run the server: 
+Stop  the container: bun run db:stop
+## Run the server: 
 bun run dev
 
 
