@@ -17,7 +17,9 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:start": "./start-database.sh",
+    "db:stop": "docker ps -q --filter name=scan2cal-postgres | xargs -r -I {} sh -c 'docker stop {} >/dev/null && echo Container scan2cal-postgres stopped'"
   },
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.12.0",
@@ -49,7 +51,8 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.0.15",
     "typescript": "^5.8.2",
-    "typescript-eslint": "^8.27.0"
+    "typescript-eslint": "^8.27.0",
+    "@types/bun": "latest"
   },
   "ct3aMetadata": {
     "initVersion": "7.39.3"
