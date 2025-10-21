@@ -8,5 +8,5 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["scan2cal_*"],
+  // tablesFilter: ["scan2cal_*"],
 } satisfies Config;
