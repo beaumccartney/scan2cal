@@ -70,7 +70,7 @@ if [ "$DB_PASSWORD" = "password" ]; then
     exit 1
   fi
   # Generate a random URL-safe password
-  DB_PASSWORD=$(openssl rand -base64 12 | tr '+/' '-_')
+  DB_PASSWORD=$(opensslii rand -base64 12 | tr '+/' '-_')
   sed -i '' "s#:password@#:$DB_PASSWORD@#" .env
 fi
 
