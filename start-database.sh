@@ -44,7 +44,7 @@ if command -v nc >/dev/null 2>&1; then
   fi
 else
   echo "Warning: Unable to check if port $DB_PORT is already in use (netcat not installed)"
-  read -p "Do you want to continue anyway? [y/N]: " -r REPLY
+  read -p "Do you want to continue anyway ? [y/N]: " -r REPLY
   if ! [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Aborting."
     exit 1

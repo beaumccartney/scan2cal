@@ -2,14 +2,17 @@ import Link from "next/link";
 
 import { LatestPost } from "~/app/_components/post";
 import { api, HydrateClient } from "~/trpc/server";
-import { auth } from "~/server/auth";
-
+import { auth, signIn } from "~/auth";
+import SignIn from "./_components/signInPage";
 export default async function Home() {
-  const session = await auth();
   const hello = await api.post.hello({ text: "from tRPC" });
+  const session = await auth();
 
   void api.post.getLatest.prefetch();
 
+  if (!session) {
+    return <SignIn />;
+  }
   return (
     <HydrateClient>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
