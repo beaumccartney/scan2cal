@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "~/context/auth-context";
 import { Navbar } from "~/components/navbar";
 
 export default function Home() {
+  const isAuthenticated = false; // XXX DELETME
+
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { isAuthenticated, user } = useAuth();
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();

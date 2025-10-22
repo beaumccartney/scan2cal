@@ -4,7 +4,6 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import { AuthProvider } from "~/context/auth-context";
 
 export const metadata: Metadata = {
   title: "Scan2Cal - Transform documents into calendar events",
@@ -24,7 +23,7 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable}`}>
       <body>
         <TRPCReactProvider>
-          <AuthProvider>{children}</AuthProvider>
+          {children}
         </TRPCReactProvider>
       </body>
     </html>

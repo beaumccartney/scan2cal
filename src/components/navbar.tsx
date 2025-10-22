@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "~/context/auth-context";
 import { useState, useRef, useEffect } from "react";
 
 export function Navbar() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const isAuthenticated = false;
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -90,15 +90,6 @@ export function Navbar() {
                 aria-expanded={isDropdownOpen}
                 aria-haspopup="true"
               >
-                {/* Avatar */}
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full ${getAvatarColor(user.username)} text-sm font-bold text-white shadow-md`}
-                >
-                  {getInitials(user.username)}
-                </div>
-                {/* Username */}
-                <span className="font-medium text-gray-900">{user.username}</span>
-                {/* Dropdown Arrow */}
                 <svg
                   className={`h-4 w-4 text-gray-500 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
                   fill="none"
@@ -113,12 +104,11 @@ export function Navbar() {
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
                   <div className="p-3 border-b border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">{user.username}</p>
                     <p className="text-xs text-gray-500">Signed in</p>
                   </div>
                   <button
                     onClick={() => {
-                      logout();
+                      // logout();
                       setIsDropdownOpen(false);
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors rounded-b-lg"
