@@ -26,16 +26,13 @@ export const posts = createTable(
   (t) => [index("name_idx").on(t.name)],
 );
 
-export const accounts = createTable(
-  "account",
-  (d) => ({
-    googleAccountId: d.varchar({ length: 255 }).primaryKey(),
-    refresh_token: d.text(),
-    access_token: d.text(),
-    expires_at: d.integer(),
-    token_type: d.varchar({ length: 255 }),
-    scope: d.varchar({ length: 255}),
-    id_token: d.text(),
-    session_state: d.varchar({ length: 255 })
-  }),
-)
+export const accounts = createTable("account", (d) => ({
+  googleAccountId: d.varchar({ length: 255 }).primaryKey().default("AccountID"),
+  refresh_token: d.text(),
+  access_token: d.text(),
+  expires_at: d.integer(),
+  token_type: d.varchar({ length: 255 }),
+  scope: d.varchar({ length: 255 }),
+  id_token: d.text(),
+  session_state: d.varchar({ length: 255 }),
+}));
