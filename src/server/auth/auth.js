@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { accounts } from "./server/db/schema";
+import { accounts } from "../db/schema";
 import postgres from "postgres"; // ✅ you need this driver for drizzle-orm/postgres-js
 
 const googleClient = process.env.GOOGLE_CLIENT_ID;

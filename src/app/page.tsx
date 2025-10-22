@@ -1,5 +1,5 @@
 import { HydrateClient } from "~/trpc/server";
-import { auth } from "~/auth";
+import { auth } from "~/server/auth/auth";
 import SignIn from "./_components/signInPage";
 
 export default async function Home() {
