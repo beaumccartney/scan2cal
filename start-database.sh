@@ -44,7 +44,7 @@ if command -v nc >/dev/null 2>&1; then
   fi
 else
   echo "Warning: Unable to check if port $DB_PORT is already in use (netcat not installed)"
-  read -p "Do you want to continue anyway? [y/N]: " -r REPLY
+  read -p "Do you want to continue anyway ? [y/N]: " -r REPLY
   if ! [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Aborting."
     exit 1
@@ -70,7 +70,7 @@ if [ "$DB_PASSWORD" = "password" ]; then
     exit 1
   fi
   # Generate a random URL-safe password
-  DB_PASSWORD=$(openssl rand -base64 12 | tr '+/' '-_')
+  DB_PASSWORD=$(opensslii rand -base64 12 | tr '+/' '-_')
   sed -i '' "s#:password@#:$DB_PASSWORD@#" .env
 fi
 

@@ -1,0 +1,1 @@
+ALTER TABLE "scan2cal_account" ALTER COLUMN "googleAccountId" SET DEFAULT 'AccountID';
