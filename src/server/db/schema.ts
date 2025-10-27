@@ -22,3 +22,9 @@ export const accounts = createTable("account", (d) => ({
   id_token: d.text(),
   session_state: d.varchar({ length: 255 }),
 }));
+
+export const calendars = createTable("calendar", (d) =>({
+  id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+  account_id: d.varchar({ length: 255 }).notNull().references(() => accounts.googleAccountId),
+  events_json: d.jsonb().notNull(),
+}))
