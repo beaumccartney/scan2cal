@@ -22,7 +22,7 @@ export async function getFromS3(key: string) {
     Key: key,
   });
   const res = await isVaildS3.send(cmd);
-  return res.Body?.transformToString?.(); // AWS SDK v3 的新方法
+  return res.Body?.transformToString?.(); 
 }
 
 // delete file from s3
