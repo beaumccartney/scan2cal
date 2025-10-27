@@ -15,6 +15,6 @@ export default async function Home() {
           Sign In Successful! <br /> {session.user?.name}
         </div>
       </main>
-    </HydrateClient>
+    </>
   );
 }
