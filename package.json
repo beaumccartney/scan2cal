@@ -22,11 +22,14 @@
     "db:stop": "docker ps -q --filter name=scan2cal-postgres | xargs -r -I {} sh -c 'docker stop {} >/dev/null && echo Container scan2cal-postgres stopped'"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.917.0",
+    "@aws-sdk/s3-request-presigner": "^3.917.0",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.69.0",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
+    "dotenv": "^17.2.3",
     "drizzle-orm": "^0.41.0",
     "next": "^15.2.3",
     "next-auth": "^5.0.0-beta.29",
@@ -40,6 +43,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.0.15",
+    "@types/bun": "latest",
     "@types/node": "^20.14.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -52,8 +56,7 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.0.15",
     "typescript": "^5.8.2",
-    "typescript-eslint": "^8.27.0",
-    "@types/bun": "latest"
+    "typescript-eslint": "^8.27.0"
   },
   "ct3aMetadata": {
     "initVersion": "7.39.3"
