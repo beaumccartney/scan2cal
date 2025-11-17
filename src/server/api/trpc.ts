@@ -6,10 +6,10 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-
+import { auth } from "../auth/auth";
 import { db } from "~/server/db";
 
 /**
@@ -24,8 +24,11 @@ import { db } from "~/server/db";
  *
  * @see https://trpc.io/docs/server/context
  */
+
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  const session = await auth();
   return {
+    userSession: session,
     db,
     ...opts,
   };
@@ -104,3 +107,31 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+const authenticatedMiddleware = t.middleware(async ({ ctx, next }) => {
+  const sessionExpires = ctx.userSession?.expires;
+  const session = ctx.userSession?.user;
+  console.log("Authenticated Middleware - Session:", session);
+  if (!sessionExpires) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Session missing or invalid",
+    });
+  }
+
+  if (Date.parse(sessionExpires) < Date.now()) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Session expired" });
+  }
+
+  const result = await next({
+    ctx: {
+      ...ctx,
+      userSession: ctx.userSession,
+    },
+  });
+  return result;
+});
+
+export const protectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(authenticatedMiddleware);

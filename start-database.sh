@@ -16,7 +16,7 @@ set -a
 source .env
 
 DB_PASSWORD=$(echo "$DATABASE_URL" | awk -F':' '{print $3}' | awk -F'@' '{print $1}')
-DB_PORT=$(echo "$DATABASE_URL" | awk -F':' '{print $4}' | awk -F'\/' '{print $1}')
+DB_PORT=$(echo "$DATABASE_URL" | awk -F':' '{print $4}' | awk -F'/' '{print $1}')
 DB_NAME=$(echo "$DATABASE_URL" | awk -F'/' '{print $4}')
 DB_CONTAINER_NAME="$DB_NAME-postgres"
 
@@ -37,11 +37,11 @@ if ! $DOCKER_CMD info > /dev/null 2>&1; then
   exit 1
 fi
 
-if command -v nc >/dev/null 2>&1; then
-  if nc -z localhost "$DB_PORT" 2>/dev/null; then
-    echo "Port $DB_PORT is already in use."
-    exit 1
-  fi
+  if command -v nc >/dev/null 2>&1; then
+    if nc -z localhost "$DB_PORT" 2>/dev/null; then
+      echo "Port $DB_PORT is already in use."
+      exit 1
+    fi
 else
   echo "Warning: Unable to check if port $DB_PORT is already in use (netcat not installed)"
   read -p "Do you want to continue anyway ? [y/N]: " -r REPLY
@@ -70,11 +70,11 @@ if [ "$DB_PASSWORD" = "password" ]; then
     exit 1
   fi
   # Generate a random URL-safe password
-  DB_PASSWORD=$(opensslii rand -base64 12 | tr '+/' '-_')
+  DB_PASSWORD=$(openssl rand -base64 12 | tr '+/' '-_')
   sed -i '' "s#:password@#:$DB_PASSWORD@#" .env
 fi
 
-$DOCKER_CMD run -d \
+$DOCKER_CMD run  \
   --name $DB_CONTAINER_NAME \
   -e POSTGRES_USER="postgres" \
   -e POSTGRES_PASSWORD="$DB_PASSWORD" \
