@@ -7,6 +7,7 @@ import { testBucketConnection } from "../../lib/s3/testConnection";
 import { PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { start } from "repl";
 import { color } from "bun";
+import { TRPCError } from "@trpc/server";
 
 const FileInput = z.object({
   filename: z.string(),
@@ -44,8 +45,16 @@ export const s3Router = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       // RN, we dont have the user id. Next step, use the current user ID.
       // const userId = z.string().parse(ctx.userSession!.user.id);
-      const userId = ctx.userSession?.user.googleAccountId;
+      const googleAccountId = ctx.userSession?.user.id;
 
+    if (!googleAccountId) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "This is no No user session" });
+    }
+
+    const userId = googleAccountId
+
+
+    console.log("current userID"+ userId);
       const list =
         "files" in input
           ? input.files.map((f) => ({ name: f.filename, type: f.contentType }))
@@ -68,10 +77,14 @@ export const s3Router = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const bucket = process.env.AWS_S3_BUCKET!;
-      // const googleID = ctx.userSession?.user.googleAccountId;
-
+      const currentUser = ctx.userSession?.user.id;
+      
+      if (!currentUser) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Hello No user session" });
+      }
+      console.log(currentUser);
       await ctx.db.insert(uploads).values({
-        // user_id: googleID,
+          user_id: currentUser,
         bucket_name: bucket,
         name: input.key,
         url: `https://${bucket}.s3.amazonaws.com/${input.key}`,

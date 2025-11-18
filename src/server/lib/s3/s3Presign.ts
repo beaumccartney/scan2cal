@@ -1,6 +1,6 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { testBucketConnection } from "./testS3Connection";
+import { testBucketConnection } from "./testConnection";
 import { randomUUID } from "crypto";
 import { api } from "~/trpc/react";
 export async function presignMany(
@@ -18,11 +18,24 @@ export async function presignMany(
 
   const results = await Promise.all(
     files.map(async (f) => {
-      const ext = f.name.split(".").pop() ?? "bin";
-      const slug = f.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9._-]/g, "");
-      // create the random UUID in the url
-      const key = `uploads/${userId}/${y}/${m}/${d}/${randomUUID()}-${slug}.${ext}`;
+      const originalName = f.name;
+      const lastDot = originalName.lastIndexOf(".");
 
+      let baseName = originalName;
+      let ext = "";
+
+      if (lastDot > 0 && lastDot < originalName.length - 1) {
+        baseName = originalName.slice(0, lastDot);
+        ext = originalName.slice(lastDot + 1);
+      }
+
+      const slug = baseName
+        .replace(/\s+/g, "-")
+        .replace(/[^a-zA-Z0-9._-]/g, "");
+
+      const finalName = ext ? `${slug}.${ext}` : slug;
+
+      const key = `uploads/${userId}/${y}/${m}/${d}/${randomUUID()}-${finalName}`;
       const cmd = new PutObjectCommand({
         Bucket: bucket,
         Key: key,
