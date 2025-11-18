@@ -1,8 +1,26 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3Client,HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { testBucketConnection } from "./testConnection";
 import { randomUUID } from "crypto";
 import { api } from "~/trpc/react";
+
+
+// Check current file existes or not 
+
+
+async function checkS3Exists(s3: S3Client, bucket: string, key: string) {
+  try {
+    await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return true; // it existes
+  } catch (err: any) {
+    if (err?.$metadata?.httpStatusCode === 404) {
+      return false; 
+    }
+    throw err;
+  }
+}
+
+
 export async function presignMany(
   files: { name: string; type: string }[],
   userId: string,
@@ -35,7 +53,16 @@ export async function presignMany(
 
       const finalName = ext ? `${slug}.${ext}` : slug;
 
-      const key = `uploads/${userId}/${y}/${m}/${d}/${randomUUID()}-${finalName}`;
+      const key = `uploads/${userId}/${y}/${m}/${d}/${finalName}`;
+
+
+
+
+      const exists = await checkS3Exists(s3, bucket, key);
+      if (exists) {
+        throw new Error(`File already uploaded: ${finalName}`);
+      }
+
       const cmd = new PutObjectCommand({
         Bucket: bucket,
         Key: key,

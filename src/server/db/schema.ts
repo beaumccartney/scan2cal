@@ -47,7 +47,7 @@ export const uploads = createTable("uploads", (d) => ({
   url: d.text(),
   upload_time: d.timestamp().defaultNow(),
   status: d.varchar({ length: 500 }),
-  events_json: d.json(),
+ // events_json: d.json(),
 }));
 
 // export const indexUserId = index("uploads_user_id_index")

@@ -84,9 +84,10 @@ export const s3Router = createTRPCRouter({
       }
       console.log(currentUser);
       await ctx.db.insert(uploads).values({
-          user_id: currentUser,
+        user_id: currentUser,
         bucket_name: bucket,
         name: input.key,
+        status:"uploaded",
         url: `https://${bucket}.s3.amazonaws.com/${input.key}`,
       });
     }),
