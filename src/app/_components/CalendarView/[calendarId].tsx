@@ -1,6 +1,5 @@
 "use client";
 
-// import calendarExample from "../../../../public/random-events.ics";
 import React, { useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import daygrid from "@fullcalendar/daygrid";

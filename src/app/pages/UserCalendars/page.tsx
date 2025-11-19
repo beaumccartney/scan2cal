@@ -3,7 +3,6 @@ import { api } from "~/trpc/server";
 
 export default async function UserCalendars() {
   const calendars = await api.calendar.listCalendars();
-
   return (
     <div className="space-y-6 p-6">
       <h1 className="text-2xl font-semibold">My Calendars</h1>
