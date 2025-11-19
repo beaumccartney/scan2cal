@@ -1,2 +1,3 @@
-ALTER TABLE "scan2cal_uploads" ALTER COLUMN "upload_id" SET DATA TYPE uuid;--> statement-breakpoint
-ALTER TABLE "scan2cal_uploads" ALTER COLUMN "upload_id" SET DEFAULT gen_random_uuid();
+-- Migration intentionally left blank. Previous attempt to convert upload_id to UUID
+-- was removed to keep the column as serial. This file is retained so historical
+-- migrations remain aligned.

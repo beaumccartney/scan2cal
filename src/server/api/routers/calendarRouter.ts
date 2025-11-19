@@ -4,8 +4,7 @@ import { calendar } from "~/server/db/schema";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
-import { db } from "~/server/db";
-import {readTextFromS3} from "~/server/lib/s3/readTextFromS3"
+import { readTextFromS3 } from "~/server/lib/s3/readTextFromS3";
 const CalendarIdInput = z.object({
   calendarId: z.number(),
 });
@@ -15,11 +14,10 @@ const SaveEventsInput = z.object({
   calendarId: z.number(),
 });
 
-const LlmPreviewInput = z.object({
-  calendarId: z.number(),
-  cleanKey: z. string(),
+const CreateCalendarInput = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
 });
-
 
 const PreviewFromS3Input = z.object({
   cleanKey: z.string(),      
@@ -74,7 +72,7 @@ ${limited}
 
 export const calendarRouter = createTRPCRouter({
   listCalendars: protectedProcedure.query(({ ctx }) => {
-    const accountId = ctx.userSession?.user.id;
+    const accountId = ctx.userSession?.user.accountId;
     console.log("Account ID:", accountId);
 
     if (!accountId) {
@@ -90,7 +88,7 @@ export const calendarRouter = createTRPCRouter({
   getCalendarById: protectedProcedure
     .input(CalendarIdInput)
     .query(({ ctx, input }) => {
-      const accountId = ctx.userSession?.user?.id;
+      const accountId = ctx.userSession?.user?.accountId;
       if (!accountId) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
@@ -104,14 +102,42 @@ export const calendarRouter = createTRPCRouter({
       });
     }),
 
-  saveLocalDb: protectedProcedure
-    .input(SaveEventsInput)
-    .mutation(({ ctx, input }) => {
-      const accountId = ctx.userSession?.user?.id;
+  createCalendar: protectedProcedure
+    .input(CreateCalendarInput)
+    .mutation(async ({ ctx, input }) => {
+      const accountId = ctx.userSession?.user?.accountId;
       if (!accountId) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
-      console.log("📥 Saving calendar:", input.name, input.events.length);
+
+      const [inserted] = await ctx.db
+        .insert(calendar)
+        .values({
+          name: input.name,
+          description: input.description,
+          account_id: accountId,
+          events: [],
+        })
+        .returning({ calendarId: calendar.calendar_id });
+
+      if (!inserted) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Unable to create calendar",
+        });
+      }
+
+      return inserted;
+    }),
+
+  saveLocalDb: protectedProcedure
+    .input(SaveEventsInput)
+    .mutation(({ ctx, input }) => {
+      const accountId = ctx.userSession?.user?.accountId;
+      if (!accountId) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+
       return ctx.db
         .insert(calendar)
         .values({
@@ -131,7 +157,7 @@ export const calendarRouter = createTRPCRouter({
   previewLlmEventsFromS3: protectedProcedure
   .input(PreviewFromS3Input)
   .mutation(async ({ ctx, input }) => {
-    const accountId = ctx.userSession?.user?.id;
+    const accountId = ctx.userSession?.user?.accountId;
     if (!accountId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
 
@@ -168,10 +194,11 @@ export const calendarRouter = createTRPCRouter({
     const res = await model.generateContent(prompt);
     const jsonText = res.response.text();
 
-    let events;
+    let parsedEvents: unknown = [];
     try {
-      events = JSON.parse(jsonText);
-    } catch (e) {
+      parsedEvents = JSON.parse(jsonText);
+    } catch (error) {
+      console.error("LLM JSON parse error", error);
       console.error(jsonText);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
@@ -179,8 +206,8 @@ export const calendarRouter = createTRPCRouter({
       });
     }
 
-    if (!Array.isArray(events)) events = [];
+    const eventsArray = Array.isArray(parsedEvents) ? parsedEvents : [];
 
-    return { events };
+    return { events: eventsArray };
   }),
 });

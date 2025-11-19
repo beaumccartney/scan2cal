@@ -1,2 +1,1 @@
-ALTER TABLE "scan2cal_uploads" ALTER COLUMN "upload_id" SET DATA TYPE serial;--> statement-breakpoint
-ALTER TABLE "scan2cal_uploads" ALTER COLUMN "upload_id" DROP DEFAULT;
+-- No-op migration kept for alignment with history. Upload_id remains serial.

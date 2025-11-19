@@ -1,9 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { s3 } from "bun";
-import { sql } from "drizzle-orm";
-import { index, pgTableCreator } from "drizzle-orm/pg-core";
+import { pgTableCreator, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -13,18 +11,27 @@ import { index, pgTableCreator } from "drizzle-orm/pg-core";
  */
 export const createTable = pgTableCreator((name) => `scan2cal_${name}`);
 
-export const accounts = createTable("account", (d) => ({
-  googleAccountId: d.varchar({ length: 255 }).primaryKey().default("AccountID"),
-  refresh_token: d.text(),
-  access_token: d.text(),
-  expires_at: d.integer(),
-  token_type: d.varchar({ length: 255 }),
-  scope: d.varchar({ length: 255 }),
-  id_token: d.text(),
-  session_state: d.varchar({ length: 255 }),
-  s3_folder: d.varchar({ length: 255 }),
-  created_at: d.timestamp().defaultNow(),
-}));
+export const accounts = createTable(
+  "account",
+  (d) => ({
+    id: d.serial().primaryKey(),
+    googleAccountId: d.varchar({ length: 255 }).notNull(),
+    refresh_token: d.text(),
+    access_token: d.text(),
+    expires_at: d.integer(),
+    token_type: d.varchar({ length: 255 }),
+    scope: d.varchar({ length: 255 }),
+    id_token: d.text(),
+    session_state: d.varchar({ length: 255 }),
+    s3_folder: d.varchar({ length: 255 }),
+    created_at: d.timestamp().defaultNow(),
+  }),
+  (table) => ({
+    googleAccountUnique: uniqueIndex("scan2cal_account_googleAccountId_unique").on(
+      table.googleAccountId,
+    ),
+  }),
+);
 
 export const calendar = createTable("calendar", (d) => ({
   calendar_id: d.serial().primaryKey(),
@@ -33,15 +40,15 @@ export const calendar = createTable("calendar", (d) => ({
   events: d.json(),
   created_at: d.timestamp().defaultNow(),
   account_id: d
-    .varchar({ length: 255 })
-    .references(() => accounts.googleAccountId),
+    .integer()
+    .references(() => accounts.id),
 }));
 
 export const uploads = createTable("uploads", (d) => ({
   upload_id: d.serial().primaryKey(),
   user_id: d
-    .varchar({ length: 255 })
-    .references(() => accounts.googleAccountId),
+    .integer()
+    .references(() => accounts.id),
   bucket_name: d.varchar({ length: 255 }),
   name: d.varchar({ length: 255 }),
   url: d.text(),

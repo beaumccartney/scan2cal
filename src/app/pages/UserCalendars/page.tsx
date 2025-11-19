@@ -1,11 +1,15 @@
 import Link from "next/link";
+import CreateCalendarButton from "./CreateCalendarButton";
 import { api } from "~/trpc/server";
 
 export default async function UserCalendars() {
   const calendars = await api.calendar.listCalendars();
   return (
     <div className="space-y-6 p-6">
-      <h1 className="text-2xl font-semibold">My Calendars</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">My Calendars</h1>
+        <CreateCalendarButton />
+      </div>
       {calendars.length === 0 ? (
         <p>No calendars</p>
       ) : (
