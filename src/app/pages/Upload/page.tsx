@@ -37,6 +37,8 @@ export default function () {
         {uploading ? "Uploading..." : "Upload file"}
       </button>
 
+      
+
       {error && <p className="text-red-500">{error}</p>}
       {result && (
        <div className="text-green-600 text-sm">

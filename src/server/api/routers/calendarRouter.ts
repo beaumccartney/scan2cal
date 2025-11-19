@@ -22,20 +22,20 @@ const LlmPreviewInput = z.object({
 
 
 const PreviewFromS3Input = z.object({
-  cleanKey: z.string(),      // S3 上 clean/...txt 的 key
-  calendarId: z.number(),    // 要存到哪个 calendar
+  cleanKey: z.string(),      
+  calendarId: z.number(),    
 });
 
 // lLM prompt
 function buildSchedulePrompt(fullText: string) {
-  // 简单做个行数/长度截断，防止 prompt 太长
+ 
   const lines = fullText
     .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
 
-  const limited = lines.slice(0, 200).join("\n"); // 例如只拿前 200 行
+  const limited = lines.slice(0, 200).join("\n"); 
 
   return `
 You are an assistant that extracts course schedule events for a university student.
