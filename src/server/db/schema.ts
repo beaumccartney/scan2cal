@@ -47,6 +47,7 @@ export const uploads = createTable("uploads", (d) => ({
   url: d.text(),
   upload_time: d.timestamp().defaultNow(),
   status: d.varchar({ length: 500 }),
+  clean_key: d.varchar({ length: 255 }), 
  // events_json: d.json(),
 }));
 
