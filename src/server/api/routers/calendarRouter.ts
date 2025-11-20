@@ -138,6 +138,11 @@ export const calendarRouter = createTRPCRouter({
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
 
+      console.log(
+        ` Saving calendar ${input.calendarId} (${input.name}) with ${input.events.length} events`,
+      );
+      console.log(JSON.stringify(input.events, null, 2));
+
       return ctx.db
         .insert(calendar)
         .values({

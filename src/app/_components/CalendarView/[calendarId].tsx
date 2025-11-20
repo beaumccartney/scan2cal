@@ -1,15 +1,21 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import daygrid from "@fullcalendar/daygrid";
+import timegrid from "@fullcalendar/timegrid";
 import interaction from "@fullcalendar/interaction";
-// import { CalendarApi } from "@fullcalendar/core/";
 import icalendar from "@fullcalendar/icalendar";
-// import { getEvents } from "./events";
-
 import { useParams } from "next/navigation";
-import type { EventApi, EventInput } from "@fullcalendar/core/index.js";
+import type {
+  CalendarApi,
+  DateSelectArg,
+  EventAddArg,
+  EventChangeArg,
+  EventRemoveArg,
+  EventApi,
+  EventInput,
+} from "@fullcalendar/core/index.js";
 import { api } from "~/trpc/react";
 
 export default function CalendarViewById() {
@@ -18,23 +24,67 @@ export default function CalendarViewById() {
   const calendarIdNumber = Number(calendarId);
 
   const [tempEvents, setTempEvents] = useState<Record<string, unknown>[]>([]);
+  const [localEvents, setLocalEvents] = useState<EventInput[]>([]);
   const saveEvents = api.calendar.saveLocalDb.useMutation();
   const { data, isLoading } = api.calendar.getCalendarById.useQuery(
     { calendarId: calendarIdNumber },
     { enabled: !Number.isNaN(calendarIdNumber) },
   );
 
-  const handleEventsSet = (calendarEvents: EventApi[]) => {
-    setTempEvents(calendarEvents.map((event) => event.toPlainObject()));
+  useEffect(() => {
+    if (Array.isArray(data?.events)) {
+      setLocalEvents(data.events as EventInput[]);
+      setTempEvents(data.events as EventInput[]);
+    }
+  }, [data?.events]);
+
+  const refreshEventsFromCalendar = () => {
+    const apiInstance = cal_ref.current?.getApi();
+    if (!apiInstance) return;
+    const updated = apiInstance
+      .getEvents()
+      .map((event) => event.toPlainObject());
+    setTempEvents(updated);
+    setLocalEvents(updated as EventInput[]);
+  };
+
+  const handleEventChange = (_changeInfo: EventChangeArg) => {
+    refreshEventsFromCalendar();
+  };
+
+  const handleEventAdd = (_addInfo: EventAddArg) => {
+    refreshEventsFromCalendar();
+  };
+
+  const handleEventRemove = (_removeInfo: EventRemoveArg) => {
+    refreshEventsFromCalendar();
+  };
+
+  const handleSelect = (selectionInfo: DateSelectArg) => {
+    const calendarApi = selectionInfo.view.calendar;
+    calendarApi.unselect();
+    const title = window.prompt("Event title?");
+    if (!title) return;
+    const newEvent: EventInput = {
+      title,
+      start: selectionInfo.startStr,
+      end: selectionInfo.endStr,
+      allDay: selectionInfo.allDay,
+    };
+    setLocalEvents((prev) => [...prev, newEvent]);
+    setTempEvents((prev) => [...prev, newEvent]);
   };
 
   async function handleSave() {
-    if (!tempEvents.length) return;
-    const name = window.prompt("Name this calendar");
+    const namePrompt = window.prompt(
+      "Name this calendar",
+      data?.name ?? "Untitled calendar",
+    );
+    const finalName =
+      namePrompt?.trim() || data?.name || "Untitled calendar";
     const calID = calendarIdNumber;
-    if (!name) return;
     await saveEvents.mutateAsync({
-      name,
+      name: finalName,
       events: tempEvents,
       calendarId: calID,
     });
@@ -52,38 +102,38 @@ export default function CalendarViewById() {
     return <div>Calendar not found.</div>;
   }
 
-  const events: EventInput[] = Array.isArray(data.events)
-    ? (data.events as EventInput[])
-    : [];
-
   return (
     <div className="flex w-full flex-col gap-4">
       <h1 className="text-xl font-semibold">{data.name}</h1>
       <FullCalendar
         ref={cal_ref}
         timeZone="MTC"
-        plugins={[daygrid, interaction, icalendar]}
+        plugins={[daygrid, timegrid, interaction, icalendar]}
         editable={true}
-        events={events}
-        initialView="dayGridWeek"
-        eventsSet={handleEventsSet}
-        eventMouseEnter={() => {
-          console.log("Entered");
-          return (
-            <div className="z-20 hidden h-[20px] w-[20px] bg-red-400">
-              HELLO THERE
-            </div>
-          );
-        }}
+        selectable={true}
+        selectMirror={true}
+        eventStartEditable={true}
+        eventDurationEditable={true}
+        events={localEvents}
+        initialView="timeGridWeek"
+        eventChange={handleEventChange}
+        eventAdd={handleEventAdd}
+        eventRemove={handleEventRemove}
+        select={handleSelect}
         headerToolbar={{
-          left: "prev,next",
+          left: "prev,next today",
           center: "title",
-          right: "dayGridWeek,dayGridDay",
+          right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
       />
-      <div className="h-20 w-20 bg-amber-300" onClick={handleSave}>
-        Save
-      </div>
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saveEvents.isPending}
+        className="self-start rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 px-6 py-3 font-semibold text-white shadow-lg transition hover:from-amber-500 hover:to-yellow-600 focus:outline-none focus:ring-2 focus:ring-amber-300 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {saveEvents.isPending ? "Saving..." : "Save calendar"}
+      </button>
     </div>
   );
 }
