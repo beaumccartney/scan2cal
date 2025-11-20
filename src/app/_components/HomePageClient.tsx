@@ -19,12 +19,6 @@ export default function HomePageClient({
   const [isDragging, setIsDragging] = useState(false);
   const { files, handleFileChange, uploadFile, uploading, error, result } =
     useUploadAllfile();
-  const uploadsQuery = api.s3.listUploads.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
-  const deleteUpload = api.s3.deleteUpload.useMutation({
-    onSuccess: () => uploadsQuery.refetch(),
-  });
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -59,19 +53,6 @@ export default function HomePageClient({
       await uploadsQuery.refetch();
     }
   };
-
-  const handleDeleteUpload = async (uploadId: number) => {
-    if (!window.confirm("Delete this upload and its cleaned file?")) return;
-    try {
-      await deleteUpload.mutateAsync({ uploadId });
-    } catch (err) {
-      console.error(err);
-      alert(
-        err instanceof Error ? err.message : "Failed to delete the upload file",
-      );
-    }
-  };
-
   return (
     <>
       <main className="flex min-h-screen flex-col bg-gradient-to-br from-[#2563eb] via-[#06b6d4] via-[#10b981] to-[#fbbf24]">
@@ -221,54 +202,7 @@ export default function HomePageClient({
 
             
 
-              <div className="w-full max-w-2xl space-y-3 rounded-2xl bg-white/90 p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Uploaded files
-                  </h2>
-                  {uploadsQuery.isFetching && (
-                    <span className="text-sm text-gray-500">Refreshing...</span>
-                  )}
-                </div>
-                {uploadsQuery.data?.length ? (
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    {uploadsQuery.data.map((upload) => (
-                      <li
-                        key={upload.upload_id}
-                        className="flex flex-col gap-1 rounded-xl border border-gray-200 p-3 md:flex-row md:items-center md:justify-between"
-                      >
-                        <div>
-                          <div className="font-medium">{upload.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {upload.upload_time
-                              ? new Date(
-                                  upload.upload_time,
-                                ).toLocaleString()
-                              : "Unknown time"}
-                          </div>
-                          {upload.clean_key && (
-                            <div className="text-xs text-emerald-600 break-all">
-                              clean: {upload.clean_key}
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteUpload(upload.upload_id)}
-                          disabled={deleteUpload.isPending}
-                          className="self-start rounded-lg border border-red-200 px-3 py-1 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {deleteUpload.isPending ? "Deleting..." : "Delete"}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    No uploads recorded yet. Upload a document to see it here.
-                  </p>
-                )}
-              </div>
+            
 
               {children}
             </>
