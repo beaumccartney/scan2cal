@@ -9,11 +9,7 @@ export default async function Home() {
   return (
     <HydrateClient>
       <HomePageClient initialSession={session}>
-        {session && (
-          <div className="w-full mt-8">
-            <UserCalendars />
-          </div>
-        )}
+        
       </HomePageClient>
     </HydrateClient>
   );

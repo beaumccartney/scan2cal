@@ -19,6 +19,9 @@ const CreateCalendarInput = z.object({
   description: z.string().optional(),
 });
 
+const deleteCalendarInput = z.object({
+  calendarId: z.number(),
+})
 const PreviewFromS3Input = z.object({
   cleanKey: z.string(),      
   calendarId: z.number(),    
@@ -129,6 +132,39 @@ export const calendarRouter = createTRPCRouter({
 
       return inserted;
     }),
+  
+  
+  deleteCalendar: protectedProcedure
+    .input(deleteCalendarInput)
+    .mutation(async ({ ctx, input }) => {
+      const accountId = ctx.userSession?.user?.accountId;
+      if (!accountId) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+      const deleted = await ctx.db
+        .delete(calendar)
+        .where(
+          and(
+            eq(calendar.calendar_id, input.calendarId),
+            eq(calendar.account_id, accountId),
+          ),
+        )
+        .returning({
+          calendarId: calendar.calendar_id,
+          name: calendar.name,
+        });
+
+      const row = deleted[0];
+
+      if (!row) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Calendar not found or not owned by user",
+        });
+      }
+
+      return row;
+    }),
 
   saveLocalDb: protectedProcedure
     .input(SaveEventsInput)
@@ -137,7 +173,6 @@ export const calendarRouter = createTRPCRouter({
       if (!accountId) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
-
       console.log(
         ` Saving calendar ${input.calendarId} (${input.name}) with ${input.events.length} events`,
       );
@@ -198,6 +233,7 @@ export const calendarRouter = createTRPCRouter({
 
     const res = await model.generateContent(prompt);
     const jsonText = res.response.text();
+    console.log("🔎 Raw LLM text:", jsonText);
 
     let parsedEvents: unknown = [];
     try {

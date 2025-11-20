@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useUploadAllfile } from "~/app/Hooks/S3/useUploadallfile";
-import SignOutButton from "./Authentication/SignOut/signOutButton";
-import SignInButton from "./Authentication/SignIn/SignInButton";
+import { api } from "~/trpc/react";
+import AppNavbar from "./AppNavbar";
 
 export default function HomePageClient({
   initialSession,
@@ -19,6 +19,12 @@ export default function HomePageClient({
   const [isDragging, setIsDragging] = useState(false);
   const { files, handleFileChange, uploadFile, uploading, error, result } =
     useUploadAllfile();
+  const uploadsQuery = api.s3.listUploads.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const deleteUpload = api.s3.deleteUpload.useMutation({
+    onSuccess: () => uploadsQuery.refetch(),
+  });
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -55,14 +61,15 @@ export default function HomePageClient({
 
   return (
     <>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#2563eb] via-[#06b6d4] via-[#10b981] to-[#fbbf24] pt-20">
-        <div className="container mx-auto flex flex-col items-center justify-center gap-8 px-4 py-16 max-w-4xl">
+      <main className="flex min-h-screen flex-col bg-gradient-to-br from-[#2563eb] via-[#06b6d4] via-[#10b981] to-[#fbbf24]">
+        <AppNavbar isAuthenticated={isAuthenticated} user={user} />
+        <div className="container mx-auto flex flex-col items-center justify-center gap-8 px-4 py-10 max-w-6xl">
           {/* Service Name */}
-          <div className="text-center w-full mb-4">
+          {/* <div className="text-center w-full mb-4">
             <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-2xl mb-2 bg-white/10 backdrop-blur-sm px-8 py-4 rounded-2xl border border-white/20 inline-block">
               Scan2cal
             </h2>
-          </div>
+          </div> */}
           
           {/* Call to Action */}
           <div className="text-center w-full">
@@ -99,9 +106,6 @@ export default function HomePageClient({
                   <p className="text-gray-600">
                     Create an account or sign in to start converting your documents into calendar events
                   </p>
-                  <div className="mt-4 flex gap-4">
-                    <SignInButton />
-                  </div>
                 </div>
               </div>
             </div>
