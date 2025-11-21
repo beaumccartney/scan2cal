@@ -17,14 +17,14 @@ export default function CalendarActions({
 }: CalendarActionsProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-
+// save calendar mutation
   const saveEvents = api.calendar.saveLocalDb.useMutation({
     onError: (err) => setError(err.message ?? "Failed to save calendar"),
      onSuccess: () => {
      router.push("/pages/UserCalendars");
     },
   });
-
+// delete calendar mutation
   const deleteCalendar = api.calendar.deleteCalendar.useMutation({
     onError: (err) => setError(err.message ?? "Failed to delete calendar"),
     onSuccess: () => {
@@ -32,7 +32,7 @@ export default function CalendarActions({
       router.push("/pages/UserCalendars");
     },
   });
-
+// handle save calendar
   async function handleSave() {
     setError(null);
     
@@ -50,15 +50,15 @@ export default function CalendarActions({
       calendarId,
     });
   }
-
+// handle delete calendar
   async function handleDelete() {
     setError(null);
-
+// confirm deletion
     const ok = window.confirm(
       `Are you sure you want to delete this calendar? This action cannot be undone.`,
     );
     if (!ok) return;
-
+//  delete calendar
     await deleteCalendar.mutateAsync({
       calendarId,
     });
@@ -67,7 +67,6 @@ export default function CalendarActions({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-4">
-        {/* Save 按钮 */}
         <button
           type="button"
           onClick={handleSave}
@@ -76,8 +75,6 @@ export default function CalendarActions({
         >
           {saveEvents.isPending ? "Saving..." : "Save calendar"}
         </button>
-
-        {/* Delete 按钮 */}
         <button
           type="button"
           onClick={handleDelete}

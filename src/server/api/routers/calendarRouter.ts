@@ -5,6 +5,7 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
 import { readTextFromS3 } from "~/server/lib/s3/readTextFromS3";
+/* ---------- Zod Schemas ---------- */
 const CalendarIdInput = z.object({
   calendarId: z.number(),
 });
@@ -27,67 +28,66 @@ const PreviewFromS3Input = z.object({
   calendarId: z.number(),    
 });
 
-// lLM prompt
+// lLM prompt , this is from gpt.
 function buildSchedulePrompt(fullText: string) {
- 
   const lines = fullText
     .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
 
-  const limited = lines.slice(0, 200).join("\n"); 
+  const limited = lines.slice(0, 200).join("\n");
 
   return `
-You are an assistant that extracts course schedule events for a university student.
+You are a precise assistant generating calendar events from academic documents. 
 
-From the syllabus text below, extract all relevant calendar events: lectures, labs, tutorials, exams, assignment deadlines, quizzes, etc.
+Use the syllabus text to extract every distinct event such as lectures, labs, tutorials, assessments, exams, and assignment deadlines.
 
-Return a JSON array of objects with this exact shape:
-
+Return a JSON array of objects with EXACTLY this structure:
 [
   {
     "title": string,
-    "start": string,
-    "end": string | null,
+    "start": string,             // ISO 8601, include timezone if present in text. Example: "2025-09-03T14:00:00"
+    "end": string | null,        // ISO 8601 end time if available. If only a start time is given, assume a 1 hour duration.
     "allDay": boolean,
     "extendedProps": {
-      "course": string | null,
-      "location": string | null,
-      "raw_line": string | null
+      "course": string | null,   // course code or name if stated
+      "location": string | null, // classroom/venue if stated
+      "raw_line": string         // the exact sentence/phrase where the event came from
     }
   }
 ]
 
 Rules:
-- Use ISO 8601 date/time (e.g. "2025-09-03T14:00:00" or "2025-09-03").
-- If there is only a date with no time, set allDay = true.
-- If there is a time range, fill both start and end.
-- Do not create events that are not clearly supported by the text.
-- If there is no time/date-related content, return an empty JSON array [].
-- Output ONLY the JSON array, no extra text.
+- Interpret months/day names/dates relative to the academic year mentioned.
+- If only a date is given, set allDay = true and leave end = null.
+- If a weekday and time are given (e.g. "Wednesdays 3:30-5:00pm"), create a representative event per the first occurrence with both start and end times. Set allDay = false.
+- Normalize times to 24-hour format (e.g. 3:30pm -> 15:30). Always include seconds (:00).
+- Do not invent events. If a line is ambiguous, include it with the best interpretation and record the original text in raw_line.
+- Output ONLY the JSON array, no comments or explanations.
 
 Syllabus text:
 ${limited}
 `.trim();
 }
 
-
+// The Router part
 export const calendarRouter = createTRPCRouter({
   listCalendars: protectedProcedure.query(({ ctx }) => {
+    // get current user id
     const accountId = ctx.userSession?.user.accountId;
     console.log("Account ID:", accountId);
 
     if (!accountId) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
-
+// select current user's calendar
     return ctx.db
       .select()
       .from(calendar)
       .where(eq(calendar.account_id, accountId));
   }),
-
+// get current calendar id
   getCalendarById: protectedProcedure
     .input(CalendarIdInput)
     .query(({ ctx, input }) => {
@@ -95,7 +95,7 @@ export const calendarRouter = createTRPCRouter({
       if (!accountId) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
-
+// find the calendar from the calendar database
       return ctx.db.query.calendar.findFirst({
         where: (cal) =>
           and(
@@ -104,7 +104,7 @@ export const calendarRouter = createTRPCRouter({
           ),
       });
     }),
-
+// create the calendar
   createCalendar: protectedProcedure
     .input(CreateCalendarInput)
     .mutation(async ({ ctx, input }) => {
@@ -112,7 +112,7 @@ export const calendarRouter = createTRPCRouter({
       if (!accountId) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
-
+// insert a table in calendar table
       const [inserted] = await ctx.db
         .insert(calendar)
         .values({
@@ -133,7 +133,7 @@ export const calendarRouter = createTRPCRouter({
       return inserted;
     }),
   
-  
+  // delete calendar
   deleteCalendar: protectedProcedure
     .input(deleteCalendarInput)
     .mutation(async ({ ctx, input }) => {
@@ -141,6 +141,7 @@ export const calendarRouter = createTRPCRouter({
       if (!accountId) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
+      //delete calendar from calendar table
       const deleted = await ctx.db
         .delete(calendar)
         .where(
@@ -165,7 +166,7 @@ export const calendarRouter = createTRPCRouter({
 
       return row;
     }),
-
+// save the all events in calendar table
   saveLocalDb: protectedProcedure
     .input(SaveEventsInput)
     .mutation(({ ctx, input }) => {
@@ -177,7 +178,7 @@ export const calendarRouter = createTRPCRouter({
         ` Saving calendar ${input.calendarId} (${input.name}) with ${input.events.length} events`,
       );
       console.log(JSON.stringify(input.events, null, 2));
-
+// insert the event in calendar table
       return ctx.db
         .insert(calendar)
         .values({
@@ -185,7 +186,8 @@ export const calendarRouter = createTRPCRouter({
           name: input.name,
           account_id: accountId,
           events: input.events,
-        })
+        }) 
+        // if the calendar exist, just update the table
         .onConflictDoUpdate({
           target: calendar.calendar_id,
           set: {
@@ -194,13 +196,14 @@ export const calendarRouter = createTRPCRouter({
           },
         });
     }),
+    // Read cleaned TXT from S3 → Parse into events using LLM → Return to preview
   previewLlmEventsFromS3: protectedProcedure
   .input(PreviewFromS3Input)
   .mutation(async ({ ctx, input }) => {
     const accountId = ctx.userSession?.user?.accountId;
     if (!accountId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-
+ // find user owned calendar first
     const cal = await ctx.db.query.calendar.findFirst({
       where: (cal) =>
         and(
@@ -208,20 +211,20 @@ export const calendarRouter = createTRPCRouter({
           eq(cal.account_id, accountId),
         ),
     });
-
+// if calendar doesnt exist, throw error
     if (!cal)
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Calendar not found or not owned by user",
       });
-
+// get the text from S3
     const text = await readTextFromS3(input.cleanKey);
     if (!text || text.length < 20)
       return { events: [] };
 
     const apiKey = process.env.GEMINI_API_KEY!;
     const prompt = buildSchedulePrompt(text);
-
+// Create the LLM pinpline
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
@@ -232,8 +235,8 @@ export const calendarRouter = createTRPCRouter({
     });
 
     const res = await model.generateContent(prompt);
+    // save the reslut to json
     const jsonText = res.response.text();
-    console.log("🔎 Raw LLM text:", jsonText);
 
     let parsedEvents: unknown = [];
     try {
