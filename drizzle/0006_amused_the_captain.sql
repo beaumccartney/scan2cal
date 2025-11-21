@@ -1,0 +1,3 @@
+-- Migration intentionally left blank. Previous attempt to convert upload_id to UUID
+-- was removed to keep the column as serial. This file is retained so historical
+-- migrations remain aligned.

@@ -1,16 +1,14 @@
-import { drizzle } from "drizzle-orm/postgres-js";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { accounts } from "../db/schema";
-import postgres from "postgres"; // ✅ you need this driver for drizzle-orm/postgres-js
+import { db } from "../db";
+import { eq } from "drizzle-orm";
 
 const googleClient = process.env.GOOGLE_CLIENT_ID;
 const googleSecret = process.env.GOOGLE_CLIENT_SECRET;
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is not defined");
 }
-const sql = postgres(process.env.DATABASE_URL);
-const db = drizzle(sql);
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
   providers: [
@@ -51,5 +49,50 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
       return true;
     },
+
+    async jwt({ token, account }) {
+      if (account?.providerAccountId) {
+        token.googleAccountId = account.providerAccountId;
+        token.accountId = null;
+      }
+
+      if (token.googleAccountId && token.accountId == null) {
+        const rows = await db
+          .select({ id: accounts.id })
+          .from(accounts)
+          .where(eq(accounts.googleAccountId, token.googleAccountId))
+          .limit(1);
+
+        token.accountId = rows[0]?.id ?? null;
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      const accountId =
+        typeof token.accountId === "number" ? token.accountId : null;
+      session.user.id = accountId !== null ? accountId.toString() : null;
+      session.user.accountId = accountId;
+      session.user.googleAccountId = token.googleAccountId ?? null;
+      return session;
+    },
+    // async jwt({ token, account }) {
+    //   if (account) {
+    //     token.googleAccountId = account.providerAccountId;
+    //   }
+    //   return token;
+    // },
+
+    // async session({ session, token }) {
+    //   session.user.googleAccountId = token.googleAccountId;
+    //   return session;
+    // },
   },
+
+  // async signOut() {
+  //   await db
+  //     .delete(accounts)
+  //     .where(eq(accounts.googleAccountId, session?.user?.id));
+  // },
 });

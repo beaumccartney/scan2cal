@@ -1,0 +1,23 @@
+[
+  {
+    "groupId": "blueEvents",
+    "daysOfWeek": ["1"],
+    "startTime": "08:00:00",
+    "endTime": "09:30:00",
+    "color": "blue"
+  },
+  {
+    "groupId": "redEvents",
+    "daysOfWeek": ["1"],
+    "startTime": "10:00:00",
+    "endTime": "11:30:00",
+    "color": "red"
+  },
+  {
+    "groupId": "greenEvents",
+    "daysOfWeek": ["2"],
+    "startTime": "13:00:00",
+    "endTime": "15:00:00",
+    "color": "green"
+  }
+]
