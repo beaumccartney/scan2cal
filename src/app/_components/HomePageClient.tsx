@@ -50,7 +50,6 @@ export default function HomePageClient({
     e.preventDefault();
     if (files.length > 0) {
       await uploadFile();
-      await uploadsQuery.refetch();
     }
   };
   return (
